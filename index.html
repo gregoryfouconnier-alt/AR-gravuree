@@ -3,40 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AR Hologramme 3D</title>
+  <title>AR Hologramme</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
-    body { margin: 0; overflow: hidden; background: black; }
+    body { margin: 0; overflow: hidden; background: #000; }
 
-    /* Scanlines hologramme */
-    #holo-overlay {
+    /* Scanlines */
+    #scanlines {
       position: fixed; inset: 0; pointer-events: none; z-index: 10;
       background: repeating-linear-gradient(
         to bottom,
-        transparent 0px, transparent 3px,
-        rgba(0,255,200,0.03) 3px, rgba(0,255,200,0.03) 4px
+        transparent 0px, transparent 2px,
+        rgba(0,255,180,0.04) 2px, rgba(0,255,180,0.04) 4px
       );
+      animation: scanmove 8s linear infinite;
+    }
+    @keyframes scanmove {
+      from { background-position: 0 0; }
+      to   { background-position: 0 100px; }
     }
 
-    /* Vignette bords */
+    /* Ligne de scan qui descend */
+    #scanline {
+      position: fixed; left: 0; right: 0; height: 3px;
+      background: rgba(0,255,200,0.18);
+      pointer-events: none; z-index: 11;
+      animation: scandown 3s linear infinite;
+    }
+    @keyframes scandown {
+      from { top: 0; opacity: 0.8; }
+      80%  { opacity: 0.8; }
+      to   { top: 100%; opacity: 0; }
+    }
+
+    /* Vignette */
     #vignette {
       position: fixed; inset: 0; pointer-events: none; z-index: 9;
-      background: radial-gradient(ellipse at center, transparent 60%, rgba(0,20,15,0.6) 100%);
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,10,8,0.75) 100%);
     }
 
     #ui {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      color: rgba(0,255,200,0.8); font-family: monospace; font-size: 12px;
-      text-align: center; z-index: 20; letter-spacing: 2px;
-      text-shadow: 0 0 8px rgba(0,255,200,0.6);
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      color: rgba(0,255,180,0.75); font-family: monospace; font-size: 11px;
+      letter-spacing: 3px; z-index: 20;
+      text-shadow: 0 0 10px rgba(0,255,180,0.5);
+      animation: blink 2s ease-in-out infinite;
     }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
   </style>
 </head>
 <body>
-  <div id="holo-overlay"></div>
+  <div id="scanlines"></div>
+  <div id="scanline"></div>
   <div id="vignette"></div>
-  <div id="ui">⬡ POINTEZ VERS LE MARKER ⬡</div>
+  <div id="ui">⬡ SCAN MARKER ⬡</div>
 
   <a-scene
     embedded
@@ -48,103 +69,124 @@
       <img id="portrait" src="photo.png" crossorigin="anonymous">
     </a-assets>
 
-    <a-marker preset="hiro">
+    <a-marker preset="hiro" id="hiro-marker">
 
-      <!-- Podium sol -->
-      <a-cylinder
-        position="0 0.02 0"
-        radius="0.9" height="0.04"
-        color="#001a1a" opacity="0.7"
-        material="transparent: true"
-      ></a-cylinder>
+      <!-- Podium -->
+      <a-cylinder position="0 0.02 0" radius="0.95" height="0.03"
+        color="#001515" opacity="0.85" material="transparent:true">
+      </a-cylinder>
 
-      <!-- Anneau rotatif extérieur -->
-      <a-torus position="0 0.04 0" rotation="-90 0 0"
-        radius="0.85" radius-tubular="0.012"
-        color="#00ffcc" opacity="0.6"
-        animation="property: rotation; from: -90 0 0; to: -90 360 0; dur: 7000; easing: linear; loop: true">
+      <!-- Anneau 1 rotatif -->
+      <a-torus position="0 0.05 0" rotation="-90 0 0"
+        radius="0.88" radius-tubular="0.014" color="#00ffcc" opacity="0.55"
+        animation="property:rotation; from:-90 0 0; to:-90 360 0; dur:6000; easing:linear; loop:true">
       </a-torus>
 
-      <!-- Anneau intérieur sens inverse -->
-      <a-torus position="0 0.04 0" rotation="-90 0 0"
-        radius="0.6" radius-tubular="0.008"
-        color="#0088ff" opacity="0.4"
-        animation="property: rotation; from: -90 360 0; to: -90 0 0; dur: 4500; easing: linear; loop: true">
+      <!-- Anneau 2 sens inverse -->
+      <a-torus position="0 0.05 0" rotation="-90 0 0"
+        radius="0.65" radius-tubular="0.009" color="#0077ff" opacity="0.4"
+        animation="property:rotation; from:-90 360 0; to:-90 0 0; dur:4000; easing:linear; loop:true">
+      </a-torus>
+
+      <!-- Anneau 3 vertical rotatif -->
+      <a-torus position="0 1.2 0" rotation="0 0 0"
+        radius="0.6" radius-tubular="0.006" color="#00ffcc" opacity="0.2"
+        animation="property:rotation; from:0 0 0; to:0 360 0; dur:5000; easing:linear; loop:true">
       </a-torus>
 
       <!-- Halo sol pulsant -->
       <a-circle position="0 0.03 0" rotation="-90 0 0"
-        radius="0.75" color="#00ffcc" opacity="0.08"
-        material="transparent: true"
-        animation="property: scale; from: 1 1 1; to: 1.08 1.08 1; dur: 2500; easing: easeInOutSine; loop: true; dir: alternate">
+        radius="0.8" color="#00ffcc" opacity="0.07"
+        material="transparent:true"
+        animation="property:scale; from:1 1 1; to:1.1 1.1 1; dur:2000; easing:easeInOutSine; loop:true; dir:alternate">
       </a-circle>
 
-      <!-- === COUCHE 1 : fond / arrière-plan (plaque sculptée) === -->
-      <!-- Position Z négative = en arrière -->
-      <a-image
-        src="#portrait"
-        position="0 1.4 -0.18"
-        width="1.15" height="1.55"
-        material="transparent: true; alphaTest: 0.05; opacity: 0.4; shader: flat"
-        animation__float="property: position; from: 0 1.35 -0.18; to: 0 1.45 -0.18; dur: 3800; easing: easeInOutSine; loop: true; dir: alternate"
-        animation__sway="property: rotation; from: 0 -3 0; to: 0 3 0; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-      ></a-image>
-
-      <!-- === COUCHE 2 : milieu (corps) === -->
-      <a-image
-        src="#portrait"
-        position="0 1.4 -0.06"
+      <!-- === COUCHE ARRIÈRE — fantôme bleuté === -->
+      <a-image src="#portrait"
+        position="0 1.3 -0.15"
         width="1.1" height="1.5"
-        material="transparent: true; alphaTest: 0.1; opacity: 0.7; shader: flat"
-        animation__float="property: position; from: 0 1.38 -0.06; to: 0 1.48 -0.06; dur: 3400; easing: easeInOutSine; loop: true; dir: alternate"
-        animation__sway="property: rotation; from: 0 -5 0; to: 0 5 0; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-      ></a-image>
+        material="transparent:true; alphaTest:0.05; opacity:0.25; shader:flat; color:#88ddff"
+        animation__float="property:position; from:0 1.25 -0.15; to:0 1.38 -0.15; dur:4200; easing:easeInOutSine; loop:true; dir:alternate"
+        animation__sway="property:rotation; from:0 -4 0; to:0 4 0; dur:5500; easing:easeInOutSine; loop:true; dir:alternate">
+      </a-image>
 
-      <!-- === COUCHE 3 : avant-plan (visages, net et lumineux) === -->
-      <a-image
-        src="#portrait"
-        position="0 1.4 0.09"
+      <!-- === COUCHE MILIEU === -->
+      <a-image src="#portrait"
+        position="0 1.3 0"
         width="1.05" height="1.45"
-        material="transparent: true; alphaTest: 0.15; opacity: 1.0; shader: flat"
-        animation__float="property: position; from: 0 1.38 0.09; to: 0 1.5 0.09; dur: 3000; easing: easeInOutSine; loop: true; dir: alternate"
-        animation__sway="property: rotation; from: 0 -7 0; to: 0 7 0; dur: 5000; easing: easeInOutSine; loop: true; dir: alternate"
-      ></a-image>
+        material="transparent:true; alphaTest:0.1; opacity:0.6; shader:flat"
+        animation__float="property:position; from:0 1.27 0; to:0 1.4 0; dur:3600; easing:easeInOutSine; loop:true; dir:alternate"
+        animation__sway="property:rotation; from:0 -6 0; to:0 6 0; dur:5500; easing:easeInOutSine; loop:true; dir:alternate">
+      </a-image>
+
+      <!-- === COUCHE AVANT — pleine luminosité === -->
+      <a-image src="#portrait"
+        id="main-portrait"
+        position="0 1.3 0.12"
+        width="1.0" height="1.4"
+        material="transparent:true; alphaTest:0.15; opacity:1; shader:flat"
+        animation__float="property:position; from:0 1.28 0.12; to:0 1.42 0.12; dur:3000; easing:easeInOutSine; loop:true; dir:alternate"
+        animation__sway="property:rotation; from:0 -8 0; to:0 8 0; dur:5500; easing:easeInOutSine; loop:true; dir:alternate"
+        animation__appear="property:scale; from:0 0 0; to:1 1 1; dur:1200; easing:easeOutElastic; loop:false">
+      </a-image>
 
       <!-- Halo derrière portrait -->
-      <a-circle
-        position="0 1.4 -0.2"
-        radius="0.65" color="#00ffcc" opacity="0.06"
-        material="transparent: true"
-        animation="property: scale; from: 1 1 1; to: 1.06 1.06 1; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate">
+      <a-circle position="0 1.3 -0.16"
+        radius="0.6" color="#00ffcc" opacity="0.07"
+        material="transparent:true"
+        animation="property:scale; from:1 1 1; to:1.08 1.08 1; dur:1800; easing:easeInOutSine; loop:true; dir:alternate">
       </a-circle>
 
-      <!-- Particules verticales gauche -->
-      <a-cylinder position="-0.5 0.6 0" radius="0.008" height="1.2"
-        color="#00ffcc" opacity="0.25"
-        animation="property: position; from: -0.5 0.4 0; to: -0.5 0.9 0; dur: 2000; easing: easeInOutSine; loop: true; dir: alternate">
+      <!-- Particule gauche montante -->
+      <a-cylinder position="-0.52 0.7 0" radius="0.007" height="1.4"
+        color="#00ffcc" opacity="0.3"
+        animation="property:position; from:-0.52 0.4 0; to:-0.52 1.1 0; dur:1900; easing:easeInOutSine; loop:true; dir:alternate">
       </a-cylinder>
 
-      <!-- Particules verticales droite -->
-      <a-cylinder position="0.5 0.6 0" radius="0.008" height="1.2"
-        color="#00ffcc" opacity="0.25"
-        animation="property: position; from: 0.5 0.9 0; to: 0.5 0.4 0; dur: 2400; easing: easeInOutSine; loop: true; dir: alternate">
+      <!-- Particule droite montante -->
+      <a-cylinder position="0.52 0.7 0" radius="0.007" height="1.4"
+        color="#00ffcc" opacity="0.3"
+        animation="property:position; from:0.52 1.1 0; to:0.52 0.4 0; dur:2300; easing:easeInOutSine; loop:true; dir:alternate">
       </a-cylinder>
 
       <!-- Texte bas -->
-      <a-text
-        value="FAMILLE"
-        position="0 -0.25 0"
-        rotation="-90 0 0"
-        align="center"
-        color="#00ffcc"
-        width="2.5"
-        opacity="0.7"
-      ></a-text>
+      <a-text value="FAMILLE" position="0 -0.28 0"
+        rotation="-90 0 0" align="center"
+        color="#00ffcc" width="2.5" opacity="0.7">
+      </a-text>
 
     </a-marker>
 
     <a-entity camera></a-entity>
   </a-scene>
+
+  <script>
+    // Glitch effect sur la couche principale
+    const glitch = () => {
+      const el = document.querySelector('#main-portrait');
+      if (!el) return;
+
+      // Décalage glitch aléatoire
+      const x = (Math.random() - 0.5) * 0.06;
+      const y = (Math.random() - 0.5) * 0.04;
+      el.setAttribute('position', `${x} ${1.3 + y} 0.12`);
+
+      // Opacité glitch
+      const op = Math.random() > 0.15 ? 1.0 : 0.3;
+      el.setAttribute('material', `transparent:true; alphaTest:0.15; opacity:${op}; shader:flat`);
+
+      // Prochain glitch dans 80ms à 3s
+      const next = Math.random() > 0.92
+        ? 80 + Math.random() * 120   // glitch rapide rare
+        : 800 + Math.random() * 2200; // pause normale
+      setTimeout(glitch, next);
+    };
+
+    // Démarre le glitch après chargement
+    document.querySelector('a-scene').addEventListener('loaded', () => {
+      setTimeout(glitch, 2000);
+    });
+  </script>
 
 </body>
 </html>
